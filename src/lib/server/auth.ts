@@ -23,7 +23,7 @@ export async function getUserFromClerkId(clerkUserId: string) {
 		.where(eq(table.user.id, clerkUserId))
 		.limit(1);
 
-	return user || null;
+	return (user as { id: string; email: string; name: string; role: 'admin' | 'national_leader' | 'manager' | 'employee'; avatarUrl: string | null; isActive: boolean } | undefined) || null;
 }
 
 /**

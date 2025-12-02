@@ -1,17 +1,11 @@
 import { sequence } from '@sveltejs/kit/hooks';
-import { handleClerk } from 'svelte-clerk/server';
-import { CLERK_SECRET_KEY } from '$env/static/private';
-import { PUBLIC_CLERK_PUBLISHABLE_KEY } from '$env/static/public';
+import { withClerkHandler } from 'svelte-clerk/server';
 import type { Handle } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
 import { syncUserFromClerk } from '$lib/server/auth';
 
 // Initialize Clerk
-const clerkHandle = handleClerk(PUBLIC_CLERK_PUBLISHABLE_KEY, {
-	secretKey: CLERK_SECRET_KEY,
-	protectedPaths: ['/dashboard', '/employees', '/admin'],
-	signInUrl: '/sign-in'
-});
+const clerkHandle = withClerkHandler();
 
 // Sync Clerk user to our database
 const authSync: Handle = async ({ event, resolve }) => {
