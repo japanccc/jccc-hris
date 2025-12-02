@@ -1,3 +1,2 @@
 # SvelteKit adapter-netlify handles routing automatically
-# This file can be empty or contain custom redirects
-/*    /index.html   200
+# This file should be empty - adapter generates its own redirects
