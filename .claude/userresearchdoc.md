@@ -43,7 +43,7 @@ This research aims to understand how different roles within JCCC interact with e
 
 ## User Personas
 
-### Persona 1: New Staff/Stinter (新スタッフ/スティンター)
+### Persona 1: New Staff (新スタッフ)
 
 **Profile:**
 
@@ -119,17 +119,18 @@ This research aims to understand how different roles within JCCC interact with e
 
 **Key Characteristics:**
 
-- Tracks deadlines and renewal dates
-- Manages complex, multi-step visa processes
+- Doesn’t have to track deadlines and renewal dates for employees. Each employee must remember and submit documents to the government on their own
+- Doesn’t manage complex, multi-step visa processes
 - Coordinates with multiple parties (staff, immigration lawyers, government)
-- High stakes - visa errors can result in deportation
+- High stakes so the system should remind each non-Japanese user when their VISA renewal is approaching (in three months)
 
 **Current Pain Points:**
 
 - Difficult to see visa status at a glance
 - Manual tracking of renewal timelines
-- No central place for visa-related documents
 - Hard to prioritize who needs attention soon
+- Because responsibility is left to individual staff and their families, the coordinator is basically reactive and has to respond to individual requests for help
+- This increases administrative and cognitive load because the requests to give help come almost randomly
 
 **Technology Comfort:**
 
@@ -236,11 +237,11 @@ This research aims to understand how different roles within JCCC interact with e
 
 ---
 
-### Persona 7: Senior Leadership (幹部リーダー)
+### Persona 7: Senior Leadership (NLT Team リーダー)
 
 **Profile:**
 
-- Executive leadership (国際局長, etc.)
+- Executive leadership
 - Age: 45-65
 - Technical proficiency: Low to moderate
 - Responsibility: Strategic planning, ministry development, succession planning
@@ -285,6 +286,8 @@ This research aims to understand how different roles within JCCC interact with e
 - Visibility into who is helping with what
 - Clear action steps and checklists
 - 24/7 access to reference information
+- tasks for staff and stinters are distinct
+- stinters are short-termers (less than 2 years) so they have different requirements
 
 ---
 
