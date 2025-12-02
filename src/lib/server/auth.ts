@@ -1,81 +1,75 @@
-import type { RequestEvent } from '@sveltejs/kit';
-import { eq } from 'drizzle-orm';
-import { sha256 } from '@oslojs/crypto/sha2';
-import { encodeBase64url, encodeHexLowerCase } from '@oslojs/encoding';
 import { db } from '$lib/server/db';
 import * as table from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
+import { CLERK_SECRET_KEY } from '$env/static/private';
+import { createClerkClient } from 'svelte-clerk/server';
 
-const DAY_IN_MS = 1000 * 60 * 60 * 24;
+const clerk = createClerkClient({ secretKey: CLERK_SECRET_KEY });
 
-export const sessionCookieName = 'auth-session';
-
-export function generateSessionToken() {
-	const bytes = crypto.getRandomValues(new Uint8Array(18));
-	const token = encodeBase64url(bytes);
-	return token;
-}
-
-export async function createSession(token: string, userId: string) {
-	const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
-	const session: table.Session = {
-		id: sessionId,
-		userId,
-		expiresAt: new Date(Date.now() + DAY_IN_MS * 30)
-	};
-	await db.insert(table.session).values(session);
-	return session;
-}
-
-export async function validateSessionToken(token: string) {
-	const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
-	const [result] = await db
+/**
+ * Get user from our database by Clerk user ID
+ */
+export async function getUserFromClerkId(clerkUserId: string) {
+	const [user] = await db
 		.select({
-			// Adjust user table here to tweak returned data
-			user: { id: table.user.id, username: table.user.username },
-			session: table.session
+			id: table.user.id,
+			email: table.user.email,
+			name: table.user.name,
+			role: table.user.role,
+			avatarUrl: table.user.avatarUrl,
+			isActive: table.user.isActive
 		})
-		.from(table.session)
-		.innerJoin(table.user, eq(table.session.userId, table.user.id))
-		.where(eq(table.session.id, sessionId));
+		.from(table.user)
+		.where(eq(table.user.id, clerkUserId))
+		.limit(1);
 
-	if (!result) {
-		return { session: null, user: null };
-	}
-	const { session, user } = result;
-
-	const sessionExpired = Date.now() >= session.expiresAt.getTime();
-	if (sessionExpired) {
-		await db.delete(table.session).where(eq(table.session.id, session.id));
-		return { session: null, user: null };
-	}
-
-	const renewSession = Date.now() >= session.expiresAt.getTime() - DAY_IN_MS * 15;
-	if (renewSession) {
-		session.expiresAt = new Date(Date.now() + DAY_IN_MS * 30);
-		await db
-			.update(table.session)
-			.set({ expiresAt: session.expiresAt })
-			.where(eq(table.session.id, session.id));
-	}
-
-	return { session, user };
+	return user || null;
 }
 
-export type SessionValidationResult = Awaited<ReturnType<typeof validateSessionToken>>;
+/**
+ * Sync user from Clerk to our database
+ * Called on every authenticated request
+ */
+export async function syncUserFromClerk(clerkUserId: string) {
+	// Check if user exists in our DB
+	let user = await getUserFromClerkId(clerkUserId);
 
-export async function invalidateSession(sessionId: string) {
-	await db.delete(table.session).where(eq(table.session.id, sessionId));
+	if (user) {
+		return user; // User already synced
+	}
+
+	// Fetch user from Clerk
+	const clerkUser = await clerk.users.getUser(clerkUserId);
+
+	// Create user in our database
+	const [newUser] = await db
+		.insert(table.user)
+		.values({
+			id: clerkUserId,
+			email: clerkUser.emailAddresses[0].emailAddress,
+			name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() ||
+				clerkUser.emailAddresses[0].emailAddress.split('@')[0],
+			avatarUrl: clerkUser.imageUrl,
+			googleId: clerkUser.externalAccounts.find(a => a.provider === 'google')?.externalId,
+			role: 'employee', // Default role
+			isActive: true,
+			createdAt: new Date(),
+			updatedAt: new Date()
+		})
+		.returning();
+
+	return newUser;
 }
 
-export function setSessionTokenCookie(event: RequestEvent, token: string, expiresAt: Date) {
-	event.cookies.set(sessionCookieName, token, {
-		expires: expiresAt,
-		path: '/'
-	});
-}
-
-export function deleteSessionTokenCookie(event: RequestEvent) {
-	event.cookies.delete(sessionCookieName, {
-		path: '/'
-	});
+/**
+ * Update user role (admin function)
+ */
+export async function updateUserRole(
+	userId: string,
+	role: 'admin' | 'national_leader' | 'manager' | 'employee'
+) {
+	await db
+		.update(table.user)
+		.set({ role, updatedAt: new Date() })
+		.where(eq(table.user.id, userId));
 }
