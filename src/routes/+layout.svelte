@@ -4,14 +4,14 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 
-	let { children } = $props();
+	let { children, data } = $props();
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<ClerkProvider publishableKey={PUBLIC_CLERK_PUBLISHABLE_KEY}>
+<ClerkProvider publishableKey={PUBLIC_CLERK_PUBLISHABLE_KEY} {...data}>
 	<div class="min-h-screen bg-gray-50">
 		<nav class="bg-white shadow">
 			<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
